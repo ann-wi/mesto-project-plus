@@ -1,38 +1,34 @@
-import express, { Application } from 'express';
-// import mongoose from 'mongoose';
-import router from './routes/index';
+import express, { NextFunction, Response } from 'express';
+import mongoose from 'mongoose';
+import userRouter from './routes/user';
+import cardRouter from './routes/card';
+import { TypeUser } from './types';
 
-const { PORT = 3000 } = process.env;
-const app: Application = express();
+const { PORT = 3000, MESTO_DB = 'mongodb://localhost:27017/mestodb' } = process.env;
+const app = express();
 
 app.use(express.json());
-app.use('/', router);
 
-app.use((req: any, res, next) => {
+app.use((req: TypeUser, res: Response, next: NextFunction) => {
   req.user = {
-    _id: '644aa6b337ae86e426ed79a2',
+    _id: '65a8ccdfd487083ed2671513',
   };
-
   next();
 });
 
-app.listen(PORT, () => {
-  // Если всё работает, консоль покажет, какой порт приложение слушает
-  console.log(`App listening on port ${PORT}`);
-});
+app.use(userRouter);
+app.use(cardRouter);
 
-/*
-const start = async () => {
+async function startServer() {
   try {
-    await mongoose.connect('mongodb://127.0.0.1:27017/test');
-    app.listen(
-      PORT,
-      () => console.log(`Server started on port ${PORT}`),
-    );
-  } catch (error) {
-    console.error(error);
+    mongoose.set('strictQuery', true);
+    await mongoose.connect(MESTO_DB);
+    console.log('Database Mesto is connected');
+    await app.listen(PORT);
+    console.log(`Server started on port: ${PORT}`);
+  } catch (err) {
+    console.log('Server Error:', err);
   }
-};
+}
 
-start();
-*/
+startServer();
