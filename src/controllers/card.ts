@@ -19,6 +19,7 @@ export const createCard = (req: TypeUser, res: Response) => {
   Card.create({ name, link, owner: req.user?._id })
     .then((card) => {
       res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card });
+      return res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'A new card was created' });
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
@@ -32,7 +33,7 @@ export const deleteCardById = (req: TypeUser, res: Response) => {
   Card.findByIdAndRemove(req.params.id)
     .then((card) => {
       if (card && card.owner.toString() === req.user?._id) {
-        res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'Card was deleted' });
+        return res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'Card was deleted' });
       }
       return res.status(NOT_FOUND_STATUS).send({ message: 'Card with this ID is not found' });
     })
@@ -44,6 +45,7 @@ export const likeCard = (req: TypeUser, res: Response) => {
     .then((card) => {
       if (card) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card });
+        return;
       }
       return res.status(NOT_FOUND_STATUS).send({ message: 'Card with this ID is not found' });
     })
@@ -60,6 +62,7 @@ export const dislikeCard = (req: TypeUser, res: Response) => {
     .then((card) => {
       if (card) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card });
+        return;
       }
       return res.status(NOT_FOUND_STATUS).send({ message: 'Card with this ID is not found' });
     })

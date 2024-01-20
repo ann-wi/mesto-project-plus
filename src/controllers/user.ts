@@ -17,6 +17,7 @@ type TUserId = string;
 function updateUserProfile(userId: TUserId, data: TUser) {
   return User.findByIdAndUpdate(userId, data, {
     new: true,
+    runValidators: true,
   });
 }
 
@@ -36,10 +37,16 @@ export const getUserById = (req: Request, res: Response) => {
           avatar: user.avatar,
           _id: user._id,
         });
+        return;
       }
       return res.status(NOT_FOUND_STATUS).send({ message: 'User with this ID is not found' });
     })
-    .catch(() => res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' }));
+    .catch((err) => {
+      if (err instanceof mongoose.Error.CastError) {
+        return res.status(BAD_REQUEST_STATUS).send({ message: 'Invalid ID format' });
+      }
+      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+    });
 };
 
 export const createUser = (req: Request, res: Response) => {
@@ -48,6 +55,7 @@ export const createUser = (req: Request, res: Response) => {
   User.create({ name, about, avatar })
     .then((user) => {
       res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user });
+      return res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'New user was created' });
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {

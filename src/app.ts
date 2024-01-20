@@ -4,8 +4,11 @@ import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import { TypeUser } from './types';
 
+const helmet = require('helmet');
+
 const { PORT = 3000, MESTO_DB = 'mongodb://localhost:27017/mestodb' } = process.env;
 const app = express();
+app.use(helmet());
 
 app.use(express.json());
 
