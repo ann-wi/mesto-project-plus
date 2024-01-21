@@ -17,10 +17,7 @@ export const createCard = (req: TypeUser, res: Response) => {
   console.log(req.user?._id);
 
   Card.create({ name, link, owner: req.user?._id })
-    .then((card) => {
-      res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card });
-      return res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'A new card was created' });
-    })
+    .then((card) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card, message: 'A new card was created' }))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         return res.status(BAD_REQUEST_STATUS).send({ message: 'New card data is incorrect' });

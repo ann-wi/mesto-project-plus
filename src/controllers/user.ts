@@ -53,10 +53,7 @@ export const createUser = (req: Request, res: Response) => {
   const { name, about, avatar } = req.body;
 
   User.create({ name, about, avatar })
-    .then((user) => {
-      res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user });
-      return res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'New user was created' });
-    })
+    .then((user) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user, message: 'New user was created' }))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         return res.status(BAD_REQUEST_STATUS).send({ message: 'New user data is incorrect' });
