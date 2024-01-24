@@ -1,10 +1,16 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from 'config';
 import User from '../models/user';
 import { TypeUser } from '../types';
 import {
   SUCCESSFUL_REQUEST_STATUS, BAD_REQUEST_STATUS, NOT_FOUND_STATUS, INTERNAL_SERVER_ERROR_STATUS,
 } from '../constants';
+import NotFoundError from '../errors/not-found-error';
+import ValidationError from 'errors/validation-error';
+import ConflictError from 'errors/conflict-error';
 
 type TUser = {
   name?: string;
@@ -21,13 +27,24 @@ function updateUserProfile(userId: TUserId, data: TUser) {
   });
 }
 
-export const getUsers = (req: Request, res: Response) => {
-  User.find({})
-    .then((users) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: users }))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' }));
+export const getUser = (req: TypeUser, res: Response, next: NextFunction) => {
+  User.findById(req.user?._id)
+    .then((user) => {
+      if (user) {
+        res.status(SUCCESSFUL_REQUEST_STATUS).send({ user });
+      }
+      next((new NotFoundError('User with this ID is not found')));
+    })
+    .catch((err) => next(err));
 };
 
-export const getUserById = (req: Request, res: Response) => {
+export const getUsers = (req: Request, res: Response, next: NextFunction) => {
+  User.find({})
+    .then((users) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: users }))
+    .catch((err) => next(err));
+};
+
+export const getUserById = (req: Request, res: Response, next: NextFunction) => {
   User.findById(req.params.id)
     .then((user) => {
       if (user) {
@@ -37,32 +54,54 @@ export const getUserById = (req: Request, res: Response) => {
           avatar: user.avatar,
           _id: user._id,
         });
-        return;
+        next((new NotFoundError('User with this ID is not found')));
       }
-      return res.status(NOT_FOUND_STATUS).send({ message: 'User with this ID is not found' });
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        return res.status(BAD_REQUEST_STATUS).send({ message: 'Invalid ID format' });
+        next((new ValidationError('Invalid ID format')));
       }
-      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+      return next(err);
     });
 };
 
-export const createUser = (req: Request, res: Response) => {
-  const { name, about, avatar } = req.body;
+export const createUser = (req: Request, res: Response, next: NextFunction) => {
+  const { name, about, avatar, email, password } = req.body;
 
-  User.create({ name, about, avatar })
-    .then((user) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user, message: 'New user was created' }))
+  return bcrypt.hash(password, 10)
+    .then((hash: string) => User.create({ name, about, avatar, email, password: hash, }))
+    .then((user) => res.status(SUCCESSFUL_REQUEST_STATUS).send({
+      name: user.name,
+      about: user.about,
+      email: user.email,
+      avatar: user.avatar,
+      _id: user._id,
+      message: 'New user was created',
+    }))
     .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        return res.status(BAD_REQUEST_STATUS).send({ message: 'New user data is incorrect' });
+      if (err.code === 11000) {
+        next((new ConflictError('User with this email already exists')));
       }
-      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next((new ValidationError('New user data is incorrect')));
+      }
+      next(err);
     });
 };
 
-export const updateUser = (req: TypeUser, res: Response) => {
+export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findUserByCredentials(email, password);
+    return res.send({
+      token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateUser = (req: TypeUser, res: Response, next: NextFunction) => {
   const { name, about } = req.body;
 
   return updateUserProfile(req.user?._id, { name, about })
@@ -70,17 +109,17 @@ export const updateUser = (req: TypeUser, res: Response) => {
       if (user) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user });
       }
-      return res.status(NOT_FOUND_STATUS).send({ message: 'User with this ID is not found' });
+      next((new NotFoundError('User with this ID is not found')));
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        return res.status(BAD_REQUEST_STATUS).send({ message: 'New user data is incorrect' });
+        next((new ValidationError('New profile data is incorrect')));
       }
-      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+      next(err);
     });
 };
 
-export const updateUserAvatar = (req: TypeUser, res: Response) => {
+export const updateUserAvatar = (req: TypeUser, res: Response, next: NextFunction) => {
   const { avatar } = req.body;
 
   return updateUserProfile(req.user?._id, { avatar })
@@ -88,12 +127,12 @@ export const updateUserAvatar = (req: TypeUser, res: Response) => {
       if (user) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user });
       }
-      return res.status(NOT_FOUND_STATUS).send({ message: 'User with this ID is not found' });
+      next((new NotFoundError('User with this ID is not found')));
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        return res.status(BAD_REQUEST_STATUS).send({ message: 'New user data is incorrect' });
+        next((new ValidationError('New avatar data is incorrect')));
       }
-      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+      next(err);
     });
 };

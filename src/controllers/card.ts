@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import Card from '../models/card';
 import { TypeUser } from '../types';
 import {
