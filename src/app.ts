@@ -1,8 +1,14 @@
 import express, { NextFunction, Response } from 'express';
+import { errors } from 'celebrate';
 import mongoose from 'mongoose';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import { TypeUser } from './types';
+import { errorLogger, requestLogger } from 'middlewares/logger';
+import { createUserValidation, loginValidation } from 'validators/userValidator';
+import { createUser, loginUser } from 'controllers/user';
+import {authMiddleware } from 'middlewares/auth';
+import errorHandler from 'middlewares/errorHandler';
 
 const helmet = require('helmet');
 
@@ -12,15 +18,21 @@ app.use(helmet());
 
 app.use(express.json());
 
-app.use((req: TypeUser, res: Response, next: NextFunction) => {
-  req.user = {
-    _id: '65a8ccdfd487083ed2671513',
-  };
-  next();
-});
+app.use(requestLogger);
+
+app.post('/signup', createUserValidation, createUser);
+app.post('/signin', loginValidation, loginUser);
+
+app.use(authMiddleware);
 
 app.use(userRouter);
 app.use(cardRouter);
+
+app.use(errorLogger);
+
+app.use(errors());
+
+app.use(errorHandler);
 
 async function startServer() {
   try {

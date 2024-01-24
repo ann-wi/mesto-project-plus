@@ -5,11 +5,10 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from 'config';
 import User from '../models/user';
 import { TypeUser } from '../types';
-import {
-  SUCCESSFUL_REQUEST_STATUS, BAD_REQUEST_STATUS, NOT_FOUND_STATUS, INTERNAL_SERVER_ERROR_STATUS,
-} from '../constants';
+import { SUCCESSFUL_REQUEST_STATUS } from '../constants';
 import NotFoundError from '../errors/not-found-error';
 import ValidationError from 'errors/validation-error';
+import UnauthorizedError from 'errors/unauthorized-error';
 import ConflictError from 'errors/conflict-error';
 
 type TUser = {
@@ -54,8 +53,9 @@ export const getUserById = (req: Request, res: Response, next: NextFunction) => 
           avatar: user.avatar,
           _id: user._id,
         });
-        next((new NotFoundError('User with this ID is not found')));
+        return;
       }
+      next((new NotFoundError('User with this ID is not found')));
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
@@ -89,16 +89,18 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findUserByCredentials(email, password);
-    return res.send({
-      token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),
+export const loginUser = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+
+      res.send({ token });
+    })
+    .catch(() => {
+      next((new UnauthorizedError('Incorrect login or password')));
     });
-  } catch (error) {
-    return next(error);
-  }
 };
 
 export const updateUser = (req: TypeUser, res: Response, next: NextFunction) => {

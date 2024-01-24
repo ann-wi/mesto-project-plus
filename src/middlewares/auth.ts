@@ -7,7 +7,7 @@ interface IAuthRequest extends Request {
   user?: string | JwtPayload
 }
 
-const authMiddleware = async (req: IAuthRequest, res: Response, next: NewableFunction) => {
+export const authMiddleware = async (req: IAuthRequest, res: Response, next: NextFunction) => {
   const { authorization } = req.body;
 
   if (!authorization || !authorization.startWith('Bearer ')) {
@@ -27,4 +27,3 @@ const authMiddleware = async (req: IAuthRequest, res: Response, next: NewableFun
   next();
 };
 
-export default authMiddleware;

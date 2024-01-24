@@ -1,19 +1,21 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import Card from '../models/card';
 import { TypeUser } from '../types';
 import {
   SUCCESSFUL_REQUEST_STATUS, BAD_REQUEST_STATUS, NOT_FOUND_STATUS, INTERNAL_SERVER_ERROR_STATUS,
 } from '../constants';
+import ValidationError from 'errors/validation-error';
+import NotFoundError from 'errors/not-found-error';
+import ForbiddenError from 'errors/forbidden-error';
 
-export const getCards = (req: Request, res: Response) => {
+export const getCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
     .then((cards) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: cards }))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' }));
+    .catch((err) => next(err));
 };
 
-export const createCard = (req: TypeUser, res: Response) => {
+export const createCard = (req: TypeUser, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
   console.log(req.user?._id);
 
@@ -21,53 +23,57 @@ export const createCard = (req: TypeUser, res: Response) => {
     .then((card) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card, message: 'A new card was created' }))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        return res.status(BAD_REQUEST_STATUS).send({ message: 'New card data is incorrect' });
+        next((new ValidationError('New card data is incorrect')));
       }
-      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+      next(err);
     });
 };
 
-export const deleteCardById = (req: TypeUser, res: Response) => {
+export const deleteCardById = (req: TypeUser, res: Response, next: NextFunction) => {
   Card.findByIdAndRemove(req.params.id)
     .then((card) => {
-      if (card && card.owner.toString() === req.user?._id) {
-        return res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'Card was deleted' });
+      if (!card) {
+        throw new NotFoundError('Card with this ID is not found');
       }
-      return res.status(NOT_FOUND_STATUS).send({ message: 'Card with this ID is not found' });
+      if (card.owner.toString() !== req.user?._id) {
+        next((new ForbiddenError('Attempt to delete other user\'s card')));
+      }
+      res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'Card is deleted' });
+      return;
     })
-    .catch(() => res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' }));
+    .catch((err) => next(err));
 };
 
-export const likeCard = (req: TypeUser, res: Response) => {
+export const likeCard = (req: TypeUser, res: Response, next: NextFunction) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user?._id } }, { new: true })
     .then((card) => {
       if (card) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card });
         return;
       }
-      return res.status(NOT_FOUND_STATUS).send({ message: 'Card with this ID is not found' });
+      next((new NotFoundError('Card with this ID is not found')));
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        return res.status(BAD_REQUEST_STATUS).send({ message: 'Like data is incorrect' });
+        next((new ValidationError('Like data is incorrect')))
       }
-      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+      next(err);
     });
 };
 
-export const dislikeCard = (req: TypeUser, res: Response) => {
+export const dislikeCard = (req: TypeUser, res: Response, next: NextFunction) => {
   Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user?._id } }, { new: true })
     .then((card) => {
       if (card) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card });
         return;
       }
-      return res.status(NOT_FOUND_STATUS).send({ message: 'Card with this ID is not found' });
+      next((new NotFoundError('Card with this ID is not found')))
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        return res.status(BAD_REQUEST_STATUS).send({ message: 'Dislike data is incorrect' });
+        next((new ValidationError('Dislike data is incorrect')));
       }
-      return res.status(INTERNAL_SERVER_ERROR_STATUS).send({ message: 'Internal Error' });
+      next(err);
     });
 };
