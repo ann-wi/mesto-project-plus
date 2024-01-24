@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import {
-  getUser, getUsers, getUserById, createUser, updateUser, updateUserAvatar,
+  getUser, getUsers, getUserById, updateUser, updateUserAvatar,
 } from '../controllers/user';
-import { getUserByIdValidation, updateUserProfileValidation, updateUserAvatarValidation } from 'validators/userValidator';
+import { getUserByIdValidation, updateUserProfileValidation, updateUserAvatarValidation } from '../validators/userValidator';
 
 const userRouter = Router();
 

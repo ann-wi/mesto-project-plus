@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { JWT_SECRET } from 'config';
+import { JWT_SECRET } from '../config';
 import { UNAUTHORIZED_ERROR_STATUS } from '../constants';
 
 interface IAuthRequest extends Request {

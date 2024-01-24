@@ -1,5 +1,4 @@
-import { defaultUser } from 'config';
-import { urlRegex } from '../config';
+import { defaultUser, urlRegex } from '../config';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import mongoose, { Model, Document } from 'mongoose';

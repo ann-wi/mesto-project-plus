@@ -1,14 +1,13 @@
-import express, { NextFunction, Response } from 'express';
+import express from 'express';
 import { errors } from 'celebrate';
 import mongoose from 'mongoose';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
-import { TypeUser } from './types';
-import { errorLogger, requestLogger } from 'middlewares/logger';
-import { createUserValidation, loginValidation } from 'validators/userValidator';
-import { createUser, loginUser } from 'controllers/user';
-import {authMiddleware } from 'middlewares/auth';
-import errorHandler from 'middlewares/errorHandler';
+import { errorLogger, requestLogger } from './middlewares/logger';
+import { createUserValidation, loginValidation } from './validators/userValidator';
+import { createUser, loginUser } from './controllers/user';
+import {authMiddleware } from './middlewares/auth';
+import errorHandler from './middlewares/errorHandler';
 
 const helmet = require('helmet');
 

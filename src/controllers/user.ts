@@ -2,14 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from 'config';
+import { JWT_SECRET } from '../config';
 import User from '../models/user';
 import { TypeUser } from '../types';
 import { SUCCESSFUL_REQUEST_STATUS } from '../constants';
 import NotFoundError from '../errors/not-found-error';
-import ValidationError from 'errors/validation-error';
-import UnauthorizedError from 'errors/unauthorized-error';
-import ConflictError from 'errors/conflict-error';
+import ValidationError from '../errors/validation-error';
+import UnauthorizedError from '../errors/unauthorized-error';
+import ConflictError from '../errors/conflict-error';
 
 type TUser = {
   name?: string;

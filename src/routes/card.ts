@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   getCards, createCard, deleteCardById, likeCard, dislikeCard,
 } from '../controllers/card';
-import { createCardValidation, getCardByIdValidation } from 'validators/cardValidator';
+import { createCardValidation, getCardByIdValidation } from '../validators/cardValidator';
 
 const cardRouter = Router();
 

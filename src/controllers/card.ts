@@ -2,12 +2,10 @@ import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Card from '../models/card';
 import { TypeUser } from '../types';
-import {
-  SUCCESSFUL_REQUEST_STATUS, BAD_REQUEST_STATUS, NOT_FOUND_STATUS, INTERNAL_SERVER_ERROR_STATUS,
-} from '../constants';
-import ValidationError from 'errors/validation-error';
-import NotFoundError from 'errors/not-found-error';
-import ForbiddenError from 'errors/forbidden-error';
+import { SUCCESSFUL_REQUEST_STATUS } from '../constants';
+import ValidationError from '../errors/validation-error';
+import NotFoundError from '../errors/not-found-error';
+import ForbiddenError from '../errors/forbidden-error';
 
 export const getCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
