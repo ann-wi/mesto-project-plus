@@ -32,13 +32,15 @@ export const deleteCardById = async (req: TypeUser, res: Response, next: NextFun
     const { cardID } = req.params;
     const cardToDelete = await Card.findById(cardID).orFail();
     if (cardToDelete.owner.toString() !== req.user?._id) {
-      next((new ForbiddenError('Attempt to delete other user\'s card')));
+      throw new ForbiddenError('Attempt to delete other user\'s card');
     }
     const deletedCard = await cardToDelete.deleteOne();
     return res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: deletedCard, message: 'Card is deleted' });
   } catch (err) {
     if (err instanceof mongoose.Error.CastError) {
       next((new ValidationError('Invalid ID format')));
+    } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+      next((new NotFoundError('Card is not found')));
     } else {
       next(err);
     }

@@ -11,7 +11,7 @@ export const authMiddleware = async (req: IAuthRequest, res: Response, next: Nex
   const { authorization } = req.body;
 
   if (!authorization || !authorization.startWith('Bearer ')) {
-    next((new UnauthorizedError('Incorrect login or password')));
+    return next((new UnauthorizedError('Incorrect login or password')));
   }
 
   const token = authorization.replace('Bearer ', '');
@@ -20,7 +20,7 @@ export const authMiddleware = async (req: IAuthRequest, res: Response, next: Nex
   try {
     payload = jwt.verify(token, JWT_SECRET);
   } catch (err) {
-    next((new UnauthorizedError('Incorrect login or password')));
+    return next((new UnauthorizedError('Incorrect login or password')));
   }
 
   req.user = payload as { _id: JwtPayload };

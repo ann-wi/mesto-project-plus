@@ -27,7 +27,7 @@ app.use(authMiddleware);
 
 app.use(userRouter);
 app.use(cardRouter);
-app.use(router)
+app.use(router);
 
 app.use(errorLogger);
 app.use(errors());

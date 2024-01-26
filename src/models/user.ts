@@ -1,9 +1,10 @@
 import mongoose, { Model, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
+import UnauthorizedError from '../errors/unauthorized-error';
 import { defaultUser, urlRegex } from '../config';
 
-interface IUser {
+interface IUser extends Document {
   name: string;
   about: string;
   avatar: string;
@@ -61,13 +62,13 @@ userSchema.static('findUserByCredentials', function findUserByCredentials(email:
   return this.findOne({ email }).select('+password')
     .then((user: any) => {
       if (!user) {
-        return Promise.reject(new Error('Incorrect email or password'));
+        throw new UnauthorizedError('Incorrect email or password');
       }
 
       return bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            return Promise.reject(new Error('Incorrect email or password'));
+            throw new UnauthorizedError('Incorrect email or password');
           }
           return user;
         });
