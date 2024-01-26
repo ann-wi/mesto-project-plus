@@ -3,6 +3,7 @@ import { errors } from 'celebrate';
 import mongoose from 'mongoose';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
+import router from './routes/index';
 import { errorLogger, requestLogger } from './middlewares/logger';
 import { createUserValidation, loginValidation } from './validators/userValidator';
 import { createUser, loginUser } from './controllers/user';
@@ -26,11 +27,10 @@ app.use(authMiddleware);
 
 app.use(userRouter);
 app.use(cardRouter);
+app.use(router)
 
 app.use(errorLogger);
-
 app.use(errors());
-
 app.use(errorHandler);
 
 async function startServer() {

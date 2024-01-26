@@ -15,19 +15,20 @@ export const getCards = (req: Request, res: Response, next: NextFunction) => {
 
 export const createCard = (req: TypeUser, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
-  console.log(req.user?._id);
 
   Card.create({ name, link, owner: req.user?._id })
     .then((card) => res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card, message: 'A new card was created' }))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         next((new ValidationError('New card data is incorrect')));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
 export const deleteCardById = (req: TypeUser, res: Response, next: NextFunction) => {
+  // fix card delete functionality
   Card.findByIdAndRemove(req.params.id)
     .then((card) => {
       if (!card) {
@@ -37,9 +38,14 @@ export const deleteCardById = (req: TypeUser, res: Response, next: NextFunction)
         next((new ForbiddenError('Attempt to delete other user\'s card')));
       }
       res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'Card is deleted' });
-      return;
     })
-    .catch((err) => next(err));
+    .catch((err) => {
+      if (err instanceof mongoose.Error.CastError) {
+        next((new ValidationError('Invalid ID format')));
+      } else {
+        next(err);
+      }
+    });
 };
 
 export const likeCard = (req: TypeUser, res: Response, next: NextFunction) => {
@@ -52,10 +58,11 @@ export const likeCard = (req: TypeUser, res: Response, next: NextFunction) => {
       next((new NotFoundError('Card with this ID is not found')));
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        next((new ValidationError('Like data is incorrect')))
+      if (err instanceof mongoose.Error.CastError) {
+        next((new ValidationError('Invalid ID format')));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -66,12 +73,13 @@ export const dislikeCard = (req: TypeUser, res: Response, next: NextFunction) =>
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: card });
         return;
       }
-      next((new NotFoundError('Card with this ID is not found')))
+      next((new NotFoundError('Card with this ID is not found')));
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        next((new ValidationError('Dislike data is incorrect')));
+      if (err instanceof mongoose.Error.CastError) {
+        next((new ValidationError('Invalid ID format')));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };

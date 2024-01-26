@@ -8,7 +8,6 @@ import { TypeUser } from '../types';
 import { SUCCESSFUL_REQUEST_STATUS } from '../constants';
 import NotFoundError from '../errors/not-found-error';
 import ValidationError from '../errors/validation-error';
-import UnauthorizedError from '../errors/unauthorized-error';
 import ConflictError from '../errors/conflict-error';
 
 type TUser = {
@@ -53,23 +52,36 @@ export const getUserById = (req: Request, res: Response, next: NextFunction) => 
           avatar: user.avatar,
           _id: user._id,
         });
-        return;
+      } else {
+        next((new NotFoundError('User with this ID is not found')));
       }
-      next((new NotFoundError('User with this ID is not found')));
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
         next((new ValidationError('Invalid ID format')));
+      } else {
+        next(err);
       }
-      return next(err);
     });
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, about, avatar, email, password } = req.body;
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
 
   return bcrypt.hash(password, 10)
-    .then((hash: string) => User.create({ name, about, avatar, email, password: hash, }))
+    .then((hash: string) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
     .then((user) => res.status(SUCCESSFUL_REQUEST_STATUS).send({
       name: user.name,
       about: user.about,
@@ -81,11 +93,11 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     .catch((err) => {
       if (err.code === 11000) {
         next((new ConflictError('User with this email already exists')));
-      }
-      if (err instanceof mongoose.Error.ValidationError) {
+      } else if (err instanceof mongoose.Error.ValidationError) {
         next((new ValidationError('New user data is incorrect')));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -98,8 +110,8 @@ export const loginUser = (req: Request, res: Response, next: NextFunction) => {
 
       res.send({ token });
     })
-    .catch(() => {
-      next((new UnauthorizedError('Incorrect login or password')));
+    .catch((err) => {
+      next(err);
     });
 };
 
@@ -110,14 +122,16 @@ export const updateUser = (req: TypeUser, res: Response, next: NextFunction) => 
     .then((user) => {
       if (user) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user });
+      } else {
+        next((new NotFoundError('User with this ID is not found')));
       }
-      next((new NotFoundError('User with this ID is not found')));
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         next((new ValidationError('New profile data is incorrect')));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -128,13 +142,15 @@ export const updateUserAvatar = (req: TypeUser, res: Response, next: NextFunctio
     .then((user) => {
       if (user) {
         res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: user });
+      } else {
+        next((new NotFoundError('User with this ID is not found')));
       }
-      next((new NotFoundError('User with this ID is not found')));
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         next((new ValidationError('New avatar data is incorrect')));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };

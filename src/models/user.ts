@@ -1,7 +1,7 @@
-import { defaultUser, urlRegex } from '../config';
-import validator from 'validator';
-import bcrypt from 'bcryptjs';
 import mongoose, { Model, Document } from 'mongoose';
+import bcrypt from 'bcryptjs';
+import validator from 'validator';
+import { defaultUser, urlRegex } from '../config';
 
 interface IUser {
   name: string;
@@ -13,6 +13,7 @@ interface IUser {
 
 interface UserModel extends Model<IUser> {
   findUserByCredentials:
+  // eslint-disable-next-line no-unused-vars
   (email: string, password: string) => Promise<Document<unknown, any, IUser>>
 }
 
