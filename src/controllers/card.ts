@@ -27,25 +27,22 @@ export const createCard = (req: TypeUser, res: Response, next: NextFunction) => 
     });
 };
 
-export const deleteCardById = (req: TypeUser, res: Response, next: NextFunction) => {
-  // fix card delete functionality
-  Card.findByIdAndRemove(req.params.id)
-    .then((card) => {
-      if (!card) {
-        throw new NotFoundError('Card with this ID is not found');
-      }
-      if (card.owner.toString() !== req.user?._id) {
-        next((new ForbiddenError('Attempt to delete other user\'s card')));
-      }
-      res.status(SUCCESSFUL_REQUEST_STATUS).send({ message: 'Card is deleted' });
-    })
-    .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        next((new ValidationError('Invalid ID format')));
-      } else {
-        next(err);
-      }
-    });
+export const deleteCardById = async (req: TypeUser, res: Response, next: NextFunction) => {
+  try {
+    const { cardID } = req.params;
+    const cardToDelete = await Card.findById(cardID).orFail();
+    if (cardToDelete.owner.toString() !== req.user?._id) {
+      next((new ForbiddenError('Attempt to delete other user\'s card')));
+    }
+    const deletedCard = await cardToDelete.deleteOne();
+    return res.status(SUCCESSFUL_REQUEST_STATUS).send({ data: deletedCard, message: 'Card is deleted' });
+  } catch (err) {
+    if (err instanceof mongoose.Error.CastError) {
+      next((new ValidationError('Invalid ID format')));
+    } else {
+      next(err);
+    }
+  }
 };
 
 export const likeCard = (req: TypeUser, res: Response, next: NextFunction) => {
